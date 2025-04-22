@@ -16,6 +16,17 @@ Type Flotext
   ttl As Double ' in seconds
 End Type
 
+Type Particle
+  alive As Integer
+  img_handle As Integer
+  x As Single
+  y As Single
+  vx As Single
+  vy As Single
+  gy As Single ' gravity
+  ttl As Double ' in seconds
+End Type
+
 ' Consts
 Const TARGET_FPS = 60
 Const WINDOW_WIDTH = 320
@@ -28,6 +39,8 @@ Const PI = 3.1415926
 
 ' List keys in use
 Const K_ESC = 27
+
+Dim a
 
 ' Prepare the screen
 ' Ref: https://qb64.com/wiki/SCREEN
@@ -59,13 +72,18 @@ cornflower_blue = _RGB32(&H64, &H95, &HED) ' &hFF6495ED
 white = _RGB32(&HFF, &HFF, &HFF)
 
 Dim Shared As Flotext Flotexts(10)
+Dim Shared img_particles(3)
+For a = 1 To 3
+  img_particles(a) = _LoadImage("images\particles_" + LTrim$(Str$(a)) + ".png")
+Next
+Dim Shared As Particle Particles(30)
 
 
 _Title "Keyboard Smasher Jam - By Hevanafa (Apr 2025)"
 
 ' Used in measurements
 Dim As String s
-Dim w, h, a
+Dim w, h
 Dim As Double dt, last_time
 last_time = Timer
 
@@ -111,6 +129,7 @@ Do
         parts = parts + 1
         last_press_time = Timer
         AddFlotext "+1", Fix(crafting_x + Rnd * 64), crafting_y, -1
+        AddParticle img_particles(1 + Fix(Rnd * 3)), crafting_x + 16, crafting_y, (Rnd - 0.5) * 6, -6, 0.3
       End If
     End If
 
@@ -130,9 +149,18 @@ Do
         Flotexts(a).y = Flotexts(a).y + Flotexts(a).vy
         Flotexts(a).ttl = Flotexts(a).ttl - dt
 
-        If Flotexts(a).ttl <= 0 Then
-          Flotexts(a).alive = False
-        End If
+        If Flotexts(a).ttl <= 0 Then Flotexts(a).alive = False
+      End If
+    Next
+
+    For a = 1 To UBound(Particles)
+      If Particles(a).alive Then
+        Particles(a).x = Particles(a).x + Particles(a).vx
+        Particles(a).y = Particles(a).y + Particles(a).vy
+        Particles(a).vy = Particles(a).vy + Particles(a).gy
+        Particles(a).ttl = Particles(a).ttl - dt
+
+        If Particles(a).ttl <= 0 Then Particles(a).alive = False
       End If
     Next
   End If
@@ -176,6 +204,10 @@ Do
 
     _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part) / 2), WINDOW_HEIGHT - 140), img_icon_usable_part
     PrintCentre Str$(scraps) + "/" + Str$(required_scraps), WINDOW_HEIGHT - 120
+
+    For a = 1 To UBound(Particles)
+      If Particles(a).alive Then _PutImage (Particles(a).x, Particles(a).y), Particles(a).img_handle
+    Next
 
     ' Crafting progress bar
     Dim As Single perc
@@ -222,7 +254,6 @@ End Sub
 
 
 Sub AddFlotext (text As String, x As Single, y As Single, vy As Single)
-  DefInt A-Z
   Dim a
   For a = 1 To UBound(Flotexts)
     If Not Flotexts(a).alive Then
@@ -232,6 +263,23 @@ Sub AddFlotext (text As String, x As Single, y As Single, vy As Single)
       Flotexts(a).y = y
       Flotexts(a).vy = vy
       Flotexts(a).ttl = 0.4
+      Exit Sub
+    End If
+  Next
+End Sub
+
+Sub AddParticle (img_handle As Integer, x As Single, y As Single, vx As Single, vy As Single, gy As Single)
+  Dim a
+  For a = 1 To UBound(Particles)
+    If Not Particles(a).alive Then
+      Particles(a).alive = True
+      Particles(a).img_handle = img_handle
+      Particles(a).x = x
+      Particles(a).y = y
+      Particles(a).vx = vx
+      Particles(a).vy = vy
+      Particles(a).gy = gy
+      Particles(a).ttl = 0.4
       Exit Sub
     End If
   Next
