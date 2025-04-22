@@ -1,0 +1,195 @@
+$Debug
+$ExeIcon:'./qb64.ico'
+
+Option _Explicit
+' Make it like Lua
+Option Base 1
+
+' Type defs
+Type Flotext
+  text As String
+  x As Single
+  y As Single
+  vy As Single
+  ttl As Double ' in seconds
+End Type
+
+' Consts
+Const TARGET_FPS = 60
+Const WINDOW_WIDTH = 320
+Const WINDOW_HEIGHT = 240
+Const SCREEN_SCALE = 3
+
+Const False = 0
+Const True = Not False
+Const PI = 3.1415926
+
+' List keys in use
+Const K_ESC = 27
+
+' Prepare the screen
+' Ref: https://qb64.com/wiki/SCREEN
+Dim buffer, scaled
+buffer = _NewImage(WINDOW_WIDTH, WINDOW_HEIGHT, 32)
+scaled = _NewImage(WINDOW_WIDTH * SCREEN_SCALE, WINDOW_HEIGHT * SCREEN_SCALE, 32)
+Screen scaled: _Dest buffer: _Delay 0.1: _Display
+
+' 32-bit colours should be used after changing the screen mode
+Dim img_pyong, img_apple_tree, img_nugget, img_crafting_table, img_ethel
+Dim img_icon_part, img_icon_usable_part
+img_pyong = _LoadImage("images\pyong.png", 32)
+img_apple_tree = _LoadImage("images\apple_tree.png", 32)
+img_nugget = _LoadImage("images\nugget.png", 32)
+img_crafting_table = _LoadImage("images\crafting_table.png", 32)
+
+img_icon_part = _LoadImage("images\part.png", 32)
+img_icon_usable_part = _LoadImage("images\usable_part.png", 32)
+img_ethel = _LoadImage("images\ethel.png", 32)
+
+Dim Shared bgm_doodle
+Dim Shared sfx_yippee, sfx_scream
+bgm_doodle = _SndOpen("bgm\doodle.ogg")
+sfx_yippee = _SndOpen("sfx\yippee.ogg")
+sfx_scream = _SndOpen("sfx\cat_scream.ogg")
+
+Dim As Long cornflower_blue, white
+cornflower_blue = _RGB32(&H64, &H95, &HED) ' &hFF6495ED
+white = _RGB32(&HFF, &HFF, &HFF)
+
+
+
+_Title "Keyboard Smasher Jam - By Hevanafa (Apr 2025)"
+
+' print text with transparent bg
+_PrintMode _KeepBackground
+
+_Font 8
+
+' Begin game state
+Dim Shared is_game, is_win
+' Dim pressed
+Dim As Double last_press_time
+Dim As String last_key, s
+Dim w, h
+Dim Shared parts, scraps
+Dim required_scraps
+Dim crafting_x, crafting_y
+
+crafting_x = Fix((WINDOW_WIDTH - _Width(img_crafting_table)) / 2)
+crafting_y = WINDOW_HEIGHT - _Height(img_crafting_table) - 20
+
+is_game = True
+
+required_scraps = 10
+_SndVol bgm_doodle, 0.3
+_SndLoop bgm_doodle
+
+
+Do
+  _Limit TARGET_FPS
+
+
+  ' Update
+  last_key = InKey$
+
+  If is_game Then
+    If last_key <> "" Then
+      If last_key = " " _orelse (Asc("a") <= Asc(last_key) _Andalso Asc(last_key) <= Asc("z")) _orelse _
+         (asc("0") <= asc(last_key) _andalso asc(last_keY) <= asc("9")) Then
+        ' pressed = pressed + 1
+        parts = parts + 1
+        last_press_time = Timer
+      End If
+    End If
+
+    If parts >= 10 Then
+      scraps = scraps + 1
+      parts = parts - 10
+    End If
+
+    If scraps >= required_scraps Then
+      _SndPlay sfx_yippee
+      is_win = True
+      is_game = False
+    End If
+  End If
+
+  If is_win Then
+    If last_key = "r" Then
+      ResetGame
+    End If
+  End If
+
+
+  ' Draw
+  Cls , cornflower_blue&
+
+  _PutImage , img_apple_tree
+  _PutImage (0, WINDOW_HEIGHT - _Height(img_pyong)), img_pyong
+  _PutImage (crafting_x, crafting_y), img_crafting_table
+  _PutImage (WINDOW_WIDTH - _Width(img_nugget), WINDOW_HEIGHT - _Height(img_nugget)), img_nugget
+
+  ' _PutImage ((WINDOW_WIDTH - _Width(qb64_logo)) \ 2, (WINDOW_HEIGHT - _Height(qb64_logo)) \ 2), qb64_logo
+
+  If is_game Then
+    _PutImage (216, 30), img_ethel
+
+    s = "The cat is stuck on a tree!"
+    'w = _PrintWidth(s)
+    PrintCentre s, 60
+    s = "Make a tool to rescue it!"
+    PrintCentre s, 70
+    ' _PrintString (Fix((WINDOW_WIDTH - w) / 2), 60), s
+
+    Dim As Double time_diff
+    Dim radius
+    time_diff = Timer - last_press_time
+
+    radius = (1 - _IIf(time_diff < 0.4, time_diff, 0.4) / 0.4) * 20
+    If radius < 0 Then radius = 20
+
+    radius = radius + 10
+    Circle (WINDOW_WIDTH / 2, WINDOW_HEIGHT - 80), radius, &HFFFFFFFF, 0, 2 * PI, 1
+
+    _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part) / 2), WINDOW_HEIGHT - 140), img_icon_usable_part
+    PrintCentre Str$(scraps) + "/" + Str$(required_scraps), WINDOW_HEIGHT - 120
+
+    ' Crafting progress bar
+    Dim As Single perc
+    perc = parts / 10
+    Line (crafting_x, crafting_y - 20)-(Fix(crafting_x + perc * 64), crafting_y - 10), &HFF20FF20, BF
+    Line (crafting_x, crafting_y - 20)-(crafting_x + 64, crafting_y - 10), &HFFFFFFFF, B
+    ' _PrintString (24, 30), "Parts:" + Str$(parts)
+  End If
+
+  If is_win Then
+    _PutImage (Fix((WINDOW_WIDTH - _Width(img_ethel)) / 2), WINDOW_HEIGHT - _Height(img_ethel) - 20), img_ethel
+    _PrintString (24, 20), "You win!"
+  End If
+
+  ' Locate 16, 1
+  ' Print "Esc - quit";
+
+  _PutImage , buffer, scaled
+  _Display
+Loop Until _KeyDown(K_ESC)
+
+_SndClose bgm_doodle
+
+System
+
+
+Sub PrintCentre (s As String, y As Integer)
+  Dim w
+  w = _PrintWidth(s)
+  _PrintString ((WINDOW_WIDTH - w) / 2, y), s
+End Sub
+
+
+Sub ResetGame
+  parts = 0
+  scraps = 0
+  is_game = True
+  is_win = False
+End Sub
+
