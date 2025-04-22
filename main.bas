@@ -6,7 +6,9 @@ Option _Explicit
 Option Base 1
 
 ' Type defs
+' Floating text
 Type Flotext
+  alive As Integer
   text As String
   x As Single
   y As Single
@@ -56,21 +58,23 @@ Dim As Long cornflower_blue, white
 cornflower_blue = _RGB32(&H64, &H95, &HED) ' &hFF6495ED
 white = _RGB32(&HFF, &HFF, &HFF)
 
+Dim Shared As Flotext Flotexts(10)
 
 
 _Title "Keyboard Smasher Jam - By Hevanafa (Apr 2025)"
 
-' print text with transparent bg
-_PrintMode _KeepBackground
+' Used in measurements
+Dim As String s
+Dim w, h, a
+Dim As Double dt, last_time
+last_time = Timer
 
-_Font 8
 
 ' Begin game state
 Dim Shared is_game, is_win
-' Dim pressed
 Dim As Double last_press_time
-Dim As String last_key, s
-Dim w, h
+Dim As String last_key
+
 Dim Shared parts, scraps
 Dim required_scraps
 Dim crafting_x, crafting_y
@@ -78,10 +82,15 @@ Dim crafting_x, crafting_y
 crafting_x = Fix((WINDOW_WIDTH - _Width(img_crafting_table)) / 2)
 crafting_y = WINDOW_HEIGHT - _Height(img_crafting_table) - 20
 
-is_game = True
+' Finalisation
+Randomize Timer
+' Print text with transparent bg
+_PrintMode _KeepBackground
+_Font 8
 
+is_game = True
 required_scraps = 10
-_SndVol bgm_doodle, 0.3
+_SndVol bgm_doodle, 0.2
 _SndLoop bgm_doodle
 
 
@@ -90,6 +99,8 @@ Do
 
 
   ' Update
+  dt = Timer - last_time
+  last_time = Timer
   last_key = InKey$
 
   If is_game Then
@@ -99,6 +110,7 @@ Do
         ' pressed = pressed + 1
         parts = parts + 1
         last_press_time = Timer
+        AddFlotext "+1", Fix(crafting_x + Rnd * 64), crafting_y, -1
       End If
     End If
 
@@ -112,6 +124,17 @@ Do
       is_win = True
       is_game = False
     End If
+
+    For a = 1 To UBound(Flotexts)
+      If Flotexts(a).alive Then
+        Flotexts(a).y = Flotexts(a).y + Flotexts(a).vy
+        Flotexts(a).ttl = Flotexts(a).ttl - dt
+
+        If Flotexts(a).ttl <= 0 Then
+          Flotexts(a).alive = False
+        End If
+      End If
+    Next
   End If
 
   If is_win Then
@@ -160,6 +183,10 @@ Do
     Line (crafting_x, crafting_y - 20)-(Fix(crafting_x + perc * 64), crafting_y - 10), &HFF20FF20, BF
     Line (crafting_x, crafting_y - 20)-(crafting_x + 64, crafting_y - 10), &HFFFFFFFF, B
     ' _PrintString (24, 30), "Parts:" + Str$(parts)
+
+    For a = 1 To UBound(Flotexts)
+      If Flotexts(a).alive Then _PrintString (Flotexts(a).x, Flotexts(a).y), Flotexts(a).text
+    Next
   End If
 
   If is_win Then
@@ -191,5 +218,22 @@ Sub ResetGame
   scraps = 0
   is_game = True
   is_win = False
+End Sub
+
+
+Sub AddFlotext (text As String, x As Single, y As Single, vy As Single)
+  DefInt A-Z
+  Dim a
+  For a = 1 To UBound(Flotexts)
+    If Not Flotexts(a).alive Then
+      Flotexts(a).alive = True
+      Flotexts(a).text = text
+      Flotexts(a).x = x
+      Flotexts(a).y = y
+      Flotexts(a).vy = vy
+      Flotexts(a).ttl = 0.4
+      Exit Sub
+    End If
+  Next
 End Sub
 
