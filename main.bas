@@ -74,11 +74,19 @@ cornflower_blue = _RGB32(&H64, &H95, &HED) ' &hFF6495ED
 white = _RGB32(&HFF, &HFF, &HFF)
 
 Dim Shared As Flotext Flotexts(10)
+
 Dim Shared img_particles(3)
 For a = 1 To 3
   img_particles(a) = _LoadImage("images\particles_" + LTrim$(Str$(a)) + ".png")
 Next
 Dim Shared As Particle Particles(30)
+
+Dim Shared img_clouds(3)
+Dim cloud_sprite_idx: cloud_sprite_idx = 1
+Dim As Double cloud_elapsed_time
+For a = 1 To 3
+  img_clouds(a) = _LoadImage("images\clouds_" + LTrim$(Str$(a)) + ".png")
+Next
 
 
 _Title "Keyboard Smasher Jam - By Hevanafa (Apr 2025)"
@@ -181,6 +189,17 @@ Do
       SaveBestTime
     End If
 
+    If shake_time > 0 Then
+      cloud_elapsed_time = cloud_elapsed_time + dt
+
+      If cloud_elapsed_time > 0.33 Then
+        cloud_elapsed_time = 0
+        cloud_sprite_idx = cloud_sprite_idx + 1
+
+        If cloud_sprite_idx > 3 Then cloud_sprite_idx = 1
+      End If
+    End If
+
     If GetPlayTime >= 10 Then
       is_lose = True
       is_game = False
@@ -265,6 +284,10 @@ Do
 
 
     ' Begin particles & stuff
+    If shake_time > 0 Then
+      _PutImage (crafting_x, crafting_y - 20), img_clouds(cloud_sprite_idx)
+    End If
+
     For a = 1 To UBound(Particles)
       If Particles(a).alive Then _PutImage (Particles(a).x, Particles(a).y), Particles(a).img_handle
     Next
