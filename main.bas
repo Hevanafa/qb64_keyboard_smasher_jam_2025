@@ -41,12 +41,13 @@ Const PI = 3.1415926
 
 ' List keys in use
 Const K_ESC = 27
+Const K_F2 = 15360
 
 Dim a
 
 ' Prepare the screen
 ' Ref: https://qb64.com/wiki/SCREEN
-Dim buffer, scaled
+Dim Shared buffer, scaled
 buffer = _NewImage(WINDOW_WIDTH, WINDOW_HEIGHT, 32)
 scaled = _NewImage(WINDOW_WIDTH * SCREEN_SCALE, WINDOW_HEIGHT * SCREEN_SCALE, 32)
 Screen scaled: _Dest buffer: _Delay 0.1: _Display
@@ -104,6 +105,7 @@ last_time = Timer
 
 ' Begin game state
 Dim Shared is_game, is_win, is_started, is_lose, is_new_best
+Dim Shared last_f2
 Dim As Double last_press_time
 Dim As String last_key
 Dim last_shake
@@ -135,11 +137,15 @@ _SndLoop bgm_doodle
 Do
   _Limit TARGET_FPS
 
-
   ' Update
   dt = Timer - last_time
   last_time = Timer
   last_key = InKey$
+
+  If last_f2 <> _KeyDown(K_F2) Then
+    last_f2 = _KeyDown(K_F2)
+    If last_f2 Then PerformScreenshot
+  End If
 
   If shake_time > 0 Then shake_time = shake_time - dt
 
@@ -524,6 +530,36 @@ End Function
 Function FMod# (n As Double, div As Double)
   FMod = n - Fix(n / div) * div
 End Function
+
+Sub PerformScreenshot
+  Dim dump$
+  $If WEB Then
+    Print "Not supported!";
+    Flush
+    Input "", dump$
+  $Else
+    If Not _DirExists("screenshots") Then
+      MkDir "screenshots"
+    End If
+
+    Dim filename$
+    filename$ = "screenshots\" + LTrim$(Str$(CLng(Timer))) + ".png"
+
+    _SaveImage filename$, scaled
+
+    Locate 2, 1
+    Print "Saved as " + filename$;
+    Locate 3, 1
+    Print "Press Enter"
+
+    ' Flush
+    _PutImage , buffer, scaled
+    _Display
+
+    Input "", dump$
+  $End If
+End Sub
+
 
 Sub StartWinSequence
 End Sub
