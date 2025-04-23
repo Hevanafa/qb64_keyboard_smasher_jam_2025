@@ -1,5 +1,6 @@
 $Debug
 $ExeIcon:'./qb64pe.ico'
+$Color:0
 
 Option _Explicit
 ' Make it like Lua
@@ -70,9 +71,9 @@ bgm_construction = _SndOpen("bgm\construction.ogg")
 sfx_yippee = _SndOpen("sfx\yippee.ogg")
 sfx_scream = _SndOpen("sfx\cat_scream.ogg")
 
-Dim As Long cornflower_blue, white
+Dim As Long cornflower_blue
 cornflower_blue = _RGB32(&H64, &H95, &HED) ' &hFF6495ED
-white = _RGB32(&HFF, &HFF, &HFF)
+' white = _RGB32(&HFF, &HFF, &HFF)
 
 Dim Shared As Flotext Flotexts(10)
 
@@ -266,9 +267,10 @@ Do
 
     s = "The cat is stuck on a tree!"
     'w = _PrintWidth(s)
-    PrintCentre s, 60
+    ' PrintCentre s, 60
+    PrintCentreOutline s, 60
     s = "Make a tool to rescue it!"
-    PrintCentre s, 70
+    PrintCentreOutline s, 70
     ' _PrintString (Fix((WINDOW_WIDTH - w) / 2), 60), s
 
     Dim As Double time_diff
@@ -290,7 +292,7 @@ Do
       offset_y = _IIf(go_down = True, LerpInOutQuad(-10, 10, t), LerpInOutQuad(10, -10, t))
       Dim img: img = _IIf((Fix(ladder_blink_time) And 1) > 0, img_icon_usable_part, img_ladder)
       _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part)) / 2, WINDOW_HEIGHT - 140 + offset_y), img
-      PrintCentre Str$(scraps) + " /" + Str$(required_scraps), WINDOW_HEIGHT - 120
+      PrintCentreOutline Str$(scraps) + " /" + Str$(required_scraps), WINDOW_HEIGHT - 120
     End If
 
 
@@ -322,30 +324,30 @@ Do
 
 
     If is_started Then
-      PrintCentre LTrim$(Str$(GetPlayTime)) + "s", 40
+      PrintCentreOutline LTrim$(Str$(GetPlayTime)) + "s", 40
     End If
 
     If Not is_started Then
-      PrintCentre "Best:" + Str$(best_time) + "s", 40
-      PrintCentre "-- Spam keys to start --", WINDOW_HEIGHT / 2
+      PrintCentreOutline "Best:" + Str$(best_time) + "s", 40
+      PrintCentreOutline "-- Spam keys to start --", WINDOW_HEIGHT / 2
     End If
   End If
 
   If is_win Then
     _PutImage (Fix((WINDOW_WIDTH - _Width(img_ethel)) / 2), WINDOW_HEIGHT - _Height(img_ethel) - 20), img_ethel
 
-    PrintCentre "You win!", 20
+    PrintCentreOutline "You win!", 20
 
-    PrintCentre LTrim$(Str$(finish_time)) + "s", 40
+    PrintCentreOutline LTrim$(Str$(finish_time)) + "s", 40
     If is_new_best Then
-      PrintCentre "(New best)", 50
+      PrintCentreOutline "(New best)", 50
     End If
-    _PrintString (10, WINDOW_HEIGHT - 20), "R - restart"
+    PrintOutline "R - restart", 10, WINDOW_HEIGHT - 20
   End If
 
   If is_lose Then
-    _PrintString (24, 20), "Time's up!"
-    _PrintString (10, WINDOW_HEIGHT - 20), "R - restart"
+    PrintOutline "Time's up!", 24, 20
+    PrintOutline "R - restart", 10, WINDOW_HEIGHT - 20
   End If
 
   ' Locate 16, 1
@@ -362,9 +364,33 @@ System
 
 
 Sub PrintCentre (s As String, y As Integer)
-  Dim w
-  w = _PrintWidth(s)
+  Dim w: w = _PrintWidth(s)
   _PrintString ((WINDOW_WIDTH - w) / 2, y), s
+End Sub
+
+' fg As Long, outline As Long
+Sub PrintCentreOutline (s As String, y As Integer)
+  Dim x
+  Dim w: w = _PrintWidth(s)
+  x = Fix((WINDOW_WIDTH - w) / 2)
+  PrintOutline s, x, y
+End Sub
+
+Sub PrintOutline (s As String, x As Integer, y As Integer)
+  Dim As Long last_colour: last_colour = _DefaultColor
+
+  ' Color outline
+  Color &HFF000000
+  _PrintString (x - 1, y), s
+  _PrintString (x + 1, y), s
+  _PrintString (x, y - 1), s
+  _PrintString (x, y + 1), s
+
+  ' Color fg
+  Color &HFFFFFFFF
+  _PrintString (x, y), s
+
+  Color last_colour
 End Sub
 
 
