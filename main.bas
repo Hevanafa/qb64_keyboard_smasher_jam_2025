@@ -91,11 +91,11 @@ last_time = Timer
 
 
 ' Begin game state
-Dim Shared is_game, is_win, is_started, is_over
+Dim Shared is_game, is_win, is_started, is_lose, is_new_best
 Dim As Double last_press_time
 Dim As String last_key
 Dim last_shake
-Dim Shared As Double start_press_time, best_time, shake_time
+Dim Shared As Double start_press_time, best_time, shake_time, finish_time
 best_time = 99999
 
 Dim Shared parts, scraps
@@ -172,11 +172,14 @@ Do
       _SndPlay sfx_yippee
       is_win = True
       is_game = False
+      finish_time = GetPlayTime
+      is_new_best = (best_time > finish_time)
+
       SaveBestTime
     End If
 
     If GetPlayTime >= 10 Then
-      is_over = True
+      is_lose = True
       is_game = False
       _SndVol sfx_scream, 0.5
       _SndPlay sfx_scream
@@ -204,9 +207,11 @@ Do
   End If
 
   If is_win Then
-    If last_key = "r" Then
-      ResetGame
-    End If
+    If last_key = "r" Then ResetGame
+  End If
+
+  If is_lose Then
+    If last_key = "r" Then ResetGame
   End If
 
 
@@ -250,7 +255,7 @@ Do
     radius = radius + 10
     Circle (WINDOW_WIDTH / 2, WINDOW_HEIGHT - 80), radius, &HFFFFFFFF, 0, 2 * PI, 1
 
-    _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part) / 2), WINDOW_HEIGHT - 140), img_icon_usable_part
+    _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part)) / 2, WINDOW_HEIGHT - 140), img_icon_usable_part
     If is_started Then
       PrintCentre Str$(scraps) + " /" + Str$(required_scraps), WINDOW_HEIGHT - 120
     End If
@@ -291,7 +296,19 @@ Do
 
   If is_win Then
     _PutImage (Fix((WINDOW_WIDTH - _Width(img_ethel)) / 2), WINDOW_HEIGHT - _Height(img_ethel) - 20), img_ethel
-    _PrintString (24, 20), "You win!"
+
+    PrintCentre "You win!", 20
+
+    PrintCentre LTrim$(Str$(finish_time)) + "s", 40
+    If is_new_best Then
+      PrintCentre "(New best)", 50
+    End If
+    _PrintString (10, WINDOW_HEIGHT - 20), "R - restart"
+  End If
+
+  If is_lose Then
+    _PrintString (24, 20), "Time's up!"
+    _PrintString (10, WINDOW_HEIGHT - 20), "R - restart"
   End If
 
   ' Locate 16, 1
@@ -320,7 +337,8 @@ Sub ResetGame
   is_game = True
   is_win = False
   is_started = False
-  is_over = False
+  is_lose = False
+  is_new_best = False
   start_press_time = 0
 End Sub
 
@@ -371,7 +389,7 @@ End Sub
 
 
 Function GetPlayTime#
-  GetPlayTime = _IIf(is_started, Fix((Timer - start_press_time) * 100) / 100, 0)
+  GetPlayTime = _IIf(is_started, CInt((Timer - start_press_time) * 100) / 100, 0)
 End Function
 
 
