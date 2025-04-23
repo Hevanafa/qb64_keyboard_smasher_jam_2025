@@ -1,5 +1,5 @@
 $Debug
-$ExeIcon:'./qb64.ico'
+$ExeIcon:'./qb64pe.ico'
 
 Option _Explicit
 ' Make it like Lua
@@ -287,7 +287,7 @@ Do
       Dim As Integer go_down
       t = FMod(Timer, 1)
       go_down = t > 0.5
-      offset_y = _iif(go_down = true, LerpInOutQuad(-10, 10, t), LerpInOutQuad(10, -10, t))
+      offset_y = _IIf(go_down = True, LerpInOutQuad(-10, 10, t), LerpInOutQuad(10, -10, t))
       Dim img: img = _IIf((Fix(ladder_blink_time) And 1) > 0, img_icon_usable_part, img_ladder)
       _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part)) / 2, WINDOW_HEIGHT - 140 + offset_y), img
       PrintCentre Str$(scraps) + " /" + Str$(required_scraps), WINDOW_HEIGHT - 120
