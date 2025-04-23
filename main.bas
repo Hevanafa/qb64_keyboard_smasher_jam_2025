@@ -51,12 +51,13 @@ scaled = _NewImage(WINDOW_WIDTH * SCREEN_SCALE, WINDOW_HEIGHT * SCREEN_SCALE, 32
 Screen scaled: _Dest buffer: _Delay 0.1: _Display
 
 ' 32-bit colours should be used after changing the screen mode
-Dim img_pyong, img_apple_tree, img_nugget, img_crafting_table, img_ethel
+Dim img_pyong, img_apple_tree, img_nugget, img_crafting_table, img_ethel, img_ladder
 Dim img_icon_part, img_icon_usable_part
 img_pyong = _LoadImage("images\pyong.png", 32)
 img_apple_tree = _LoadImage("images\apple_tree.png", 32)
 img_nugget = _LoadImage("images\nugget.png", 32)
 img_crafting_table = _LoadImage("images\crafting_table.png", 32)
+img_ladder = _LoadImage("images\ladder.png", 32)
 
 img_icon_part = _LoadImage("images\part.png", 32)
 img_icon_usable_part = _LoadImage("images\usable_part.png", 32)
@@ -75,6 +76,7 @@ white = _RGB32(&HFF, &HFF, &HFF)
 
 Dim Shared As Flotext Flotexts(10)
 
+Dim ladder_blink_time
 Dim Shared img_particles(3)
 For a = 1 To 3
   img_particles(a) = _LoadImage("images\particles_" + LTrim$(Str$(a)) + ".png")
@@ -200,6 +202,8 @@ Do
       End If
     End If
 
+    ladder_blink_time = ladder_blink_time + dt
+
     If GetPlayTime >= 10 Then
       is_lose = True
       is_game = False
@@ -277,8 +281,8 @@ Do
     radius = radius + 10
     Circle (WINDOW_WIDTH / 2, WINDOW_HEIGHT - 80), radius, &HFFFFFFFF, 0, 2 * PI, 1
 
-    _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part)) / 2, WINDOW_HEIGHT - 140), img_icon_usable_part
     If is_started Then
+      _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part)) / 2, WINDOW_HEIGHT - 140), _IIf((Fix(ladder_blink_time) And 1) > 0, img_icon_usable_part, img_ladder)
       PrintCentre Str$(scraps) + " /" + Str$(required_scraps), WINDOW_HEIGHT - 120
     End If
 
