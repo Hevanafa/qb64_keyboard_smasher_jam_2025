@@ -159,6 +159,7 @@ Do
     End If
   End If
 
+
   If is_game Then
     If last_key <> "" Then
       'If last_key = " " _orelse (Asc("a") <= Asc(last_key) _Andalso Asc(last_key) <= Asc("z")) _orelse _
@@ -337,6 +338,11 @@ Do
       PrintCentreOutline "Best:" + Str$(best_time) + "s", 40
       PrintCentreOutline "-- Spam keys to start --", WINDOW_HEIGHT / 2
     End If
+  End If
+
+  If Not is_started Then
+    PrintCentreOutline "By Hevanafa (Apr 2025)", WINDOW_HEIGHT - 28
+    PrintCentreOutline "for the Keyboard Smasher Jam", WINDOW_HEIGHT - 20
   End If
 
   If is_win Then
