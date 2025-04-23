@@ -61,9 +61,10 @@ img_icon_part = _LoadImage("images\part.png", 32)
 img_icon_usable_part = _LoadImage("images\usable_part.png", 32)
 img_ethel = _LoadImage("images\ethel.png", 32)
 
-Dim Shared bgm_doodle
+Dim Shared bgm_doodle, bgm_construction
 Dim Shared sfx_yippee, sfx_scream
 bgm_doodle = _SndOpen("bgm\doodle.ogg")
+bgm_construction = _SndOpen("bgm\construction.ogg")
 sfx_yippee = _SndOpen("sfx\yippee.ogg")
 sfx_scream = _SndOpen("sfx\cat_scream.ogg")
 
@@ -89,10 +90,11 @@ last_time = Timer
 
 
 ' Begin game state
-Dim Shared is_game, is_win, is_started
+Dim Shared is_game, is_win, is_started, is_over
 Dim As Double last_press_time
 Dim As String last_key
-Dim Shared As Double start_press_time, best_time
+Dim last_shake
+Dim Shared As Double start_press_time, best_time, shake_time
 best_time = 99999
 
 Dim Shared parts, scraps
@@ -112,6 +114,7 @@ LoadBestTime
 
 is_game = True
 required_scraps = 10
+_SndVol bgm_construction, 0.5
 _SndVol bgm_doodle, 0.2
 _SndLoop bgm_doodle
 
@@ -125,6 +128,18 @@ Do
   last_time = Timer
   last_key = InKey$
 
+  If shake_time > 0 Then shake_time = shake_time - dt
+
+  If last_shake <> (shake_time > 0) Then
+    last_shake = (shake_time > 0)
+    If last_shake Then
+      _SndSetPos bgm_construction, Rnd * 5
+      _SndPlay bgm_construction
+    Else
+      _SndPause bgm_construction
+    End If
+  End If
+
   If is_game Then
     If last_key <> "" Then
       If last_key = " " _orelse (Asc("a") <= Asc(last_key) _Andalso Asc(last_key) <= Asc("z")) _orelse _
@@ -132,6 +147,7 @@ Do
         ' pressed = pressed + 1
         parts = parts + 1
         last_press_time = Timer
+        shake_time = 0.4
         AddFlotext "+1", Fix(crafting_x + Rnd * 64), crafting_y, -1
         AddParticle img_particles(1 + Fix(Rnd * 3)), crafting_x + 16, crafting_y, (Rnd - 0.5) * 6, -6, 0.3
 
@@ -152,6 +168,13 @@ Do
       is_win = True
       is_game = False
       SaveBestTime
+    End If
+
+    If GetPlayTime >= 10 Then
+      is_over = True
+      is_game = False
+      _SndVol sfx_scream, 0.5
+      _SndPlay sfx_scream
     End If
 
     For a = 1 To UBound(Flotexts)
@@ -186,7 +209,17 @@ Do
   Cls , cornflower_blue&
 
   _PutImage , img_apple_tree
-  _PutImage (0, WINDOW_HEIGHT - _Height(img_pyong)), img_pyong
+
+  Dim offset_x, offset_y
+  If shake_time > 0 Then
+    offset_x = (Rnd - 0.5) * 6
+    offset_y = (Rnd - 0.5) * 6
+  Else
+    offset_x = 0
+    offset_y = 0
+  End If
+  _PutImage (40 + offset_x, WINDOW_HEIGHT - _Height(img_pyong) + offset_y), img_pyong
+
   _PutImage (crafting_x, crafting_y), img_crafting_table
   _PutImage (WINDOW_WIDTH - _Width(img_nugget), WINDOW_HEIGHT - _Height(img_nugget)), img_nugget
 
@@ -237,7 +270,7 @@ Do
     Next
 
     If is_started Then
-      PrintCentre ltrim$(Str$(GetPlayTime)) + "s", 40
+      PrintCentre LTrim$(Str$(GetPlayTime)) + "s", 40
     End If
 
     If Not is_started Then
@@ -276,6 +309,7 @@ Sub ResetGame
   is_game = True
   is_win = False
   is_started = False
+  is_over = False
   start_press_time = 0
 End Sub
 
