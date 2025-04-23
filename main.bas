@@ -281,8 +281,15 @@ Do
     radius = radius + 10
     Circle (WINDOW_WIDTH / 2, WINDOW_HEIGHT - 80), radius, &HFFFFFFFF, 0, 2 * PI, 1
 
+    ' Floating ladder
     If is_started Then
-      _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part)) / 2, WINDOW_HEIGHT - 140), _IIf((Fix(ladder_blink_time) And 1) > 0, img_icon_usable_part, img_ladder)
+      Dim As Single t
+      Dim As Integer go_down
+      t = FMod(Timer, 1)
+      go_down = t > 0.5
+      offset_y = _iif(go_down = true, LerpInOutQuad(-10, 10, t), LerpInOutQuad(10, -10, t))
+      Dim img: img = _IIf((Fix(ladder_blink_time) And 1) > 0, img_icon_usable_part, img_ladder)
+      _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part)) / 2, WINDOW_HEIGHT - 140 + offset_y), img
       PrintCentre Str$(scraps) + " /" + Str$(required_scraps), WINDOW_HEIGHT - 120
     End If
 
@@ -471,6 +478,26 @@ Function hsv2rgb& (h As Double, s As Double, v As Double)
   hsv2rgb = _RGB32(r * 255, g * 255, b * 255, 255)
 End Function
 
+Function Lerp# (a#, z#, perc#)
+  Lerp = (z# - a#) * Clamp(perc#, 0, 1) + a#
+End Function
+
+Function Clamp# (value#, a#, z#)
+  Clamp = _IIf(value# < a#, a#, _IIf(value# > z#, z#, value#))
+End Function
+
+
+Function EaseInOutQuad# (x As Double)
+  EaseInOutQuad = _IIf(x < 0.5, 2 * x ^ 2, 1 - (-2 * x + 2) ^ 2 / 2)
+End Function
+
+Function LerpInOutQuad# (a As Double, z As Double, perc As Double)
+  LerpInOutQuad = Lerp(a, z, EaseInOutQuad(perc))
+End Function
+
+Function FMod# (n As Double, div As Double)
+  FMod = n - Fix(n / div) * div
+End Function
 
 Sub StartWinSequence
 End Sub
