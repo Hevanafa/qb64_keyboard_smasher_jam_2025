@@ -82,6 +82,7 @@ Dim Shared As Particle Particles(30)
 
 
 _Title "Keyboard Smasher Jam - By Hevanafa (Apr 2025)"
+_ScreenMove _Middle
 
 ' Used in measurements
 Dim As String s
@@ -143,8 +144,10 @@ Do
 
   If is_game Then
     If last_key <> "" Then
-      If last_key = " " _orelse (Asc("a") <= Asc(last_key) _Andalso Asc(last_key) <= Asc("z")) _orelse _
-         (asc("0") <= asc(last_key) _andalso asc(last_keY) <= asc("9")) Then
+      'If last_key = " " _orelse (Asc("a") <= Asc(last_key) _Andalso Asc(last_key) <= Asc("z")) _orelse _
+      '   (asc("0") <= asc(last_key) _andalso asc(last_keY) <= asc("9")) Then
+
+      If 32 <= Asc(last_key) _Andalso Asc(last_key) <= 126 Then
         ' pressed = pressed + 1
         parts = parts + 1
         last_press_time = Timer
