@@ -54,7 +54,7 @@ Screen scaled: _Dest buffer: _Delay 0.1: _Display
 Dim img_pyong, img_apple_tree, img_nugget, img_crafting_table, img_ethel, img_ladder
 Dim img_icon_part, img_icon_usable_part
 img_pyong = _LoadImage("images\pyong.png", 32)
-img_apple_tree = _LoadImage("images\apple_tree.png", 32)
+img_apple_tree = _LoadImage("images\apple_tree_new.png", 32)
 img_nugget = _LoadImage("images\nugget.png", 32)
 img_crafting_table = _LoadImage("images\crafting_table.png", 32)
 img_ladder = _LoadImage("images\ladder.png", 32)
@@ -254,7 +254,7 @@ Do
     offset_x = 0
     offset_y = 0
   End If
-  _PutImage (40 + offset_x, WINDOW_HEIGHT - _Height(img_pyong) + offset_y), img_pyong
+  _PutImage (50 + offset_x, WINDOW_HEIGHT - _Height(img_pyong) + offset_y), img_pyong
 
   _PutImage (crafting_x, crafting_y), img_crafting_table
   _PutImage (WINDOW_WIDTH - _Width(img_nugget), WINDOW_HEIGHT - _Height(img_nugget)), img_nugget
