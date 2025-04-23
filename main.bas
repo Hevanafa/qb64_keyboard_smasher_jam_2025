@@ -89,9 +89,11 @@ last_time = Timer
 
 
 ' Begin game state
-Dim Shared is_game, is_win
+Dim Shared is_game, is_win, is_started
 Dim As Double last_press_time
 Dim As String last_key
+Dim Shared As Double start_press_time, best_time
+best_time = 99999
 
 Dim Shared parts, scraps
 Dim required_scraps
@@ -105,6 +107,8 @@ Randomize Timer
 ' Print text with transparent bg
 _PrintMode _KeepBackground
 _Font 8
+
+LoadBestTime
 
 is_game = True
 required_scraps = 10
@@ -130,6 +134,11 @@ Do
         last_press_time = Timer
         AddFlotext "+1", Fix(crafting_x + Rnd * 64), crafting_y, -1
         AddParticle img_particles(1 + Fix(Rnd * 3)), crafting_x + 16, crafting_y, (Rnd - 0.5) * 6, -6, 0.3
+
+        If Not is_started Then
+          is_started = True
+          start_press_time = Timer
+        End If
       End If
     End If
 
@@ -142,6 +151,7 @@ Do
       _SndPlay sfx_yippee
       is_win = True
       is_game = False
+      SaveBestTime
     End If
 
     For a = 1 To UBound(Flotexts)
@@ -203,22 +213,37 @@ Do
     Circle (WINDOW_WIDTH / 2, WINDOW_HEIGHT - 80), radius, &HFFFFFFFF, 0, 2 * PI, 1
 
     _PutImage (Fix(WINDOW_WIDTH - _Width(img_icon_usable_part) / 2), WINDOW_HEIGHT - 140), img_icon_usable_part
-    PrintCentre Str$(scraps) + "/" + Str$(required_scraps), WINDOW_HEIGHT - 120
+    If is_started Then
+      PrintCentre Str$(scraps) + " /" + Str$(required_scraps), WINDOW_HEIGHT - 120
+    End If
 
+
+    ' Begin particles & stuff
     For a = 1 To UBound(Particles)
       If Particles(a).alive Then _PutImage (Particles(a).x, Particles(a).y), Particles(a).img_handle
     Next
 
     ' Crafting progress bar
-    Dim As Single perc
-    perc = parts / 10
-    Line (crafting_x, crafting_y - 20)-(Fix(crafting_x + perc * 64), crafting_y - 10), &HFF20FF20, BF
-    Line (crafting_x, crafting_y - 20)-(crafting_x + 64, crafting_y - 10), &HFFFFFFFF, B
-    ' _PrintString (24, 30), "Parts:" + Str$(parts)
+    If is_started Then
+      Dim As Single perc
+      perc = parts / 10
+      Line (crafting_x, crafting_y - 20)-(Fix(crafting_x + perc * 64), crafting_y - 10), &HFF20FF20, BF
+      Line (crafting_x, crafting_y - 20)-(crafting_x + 64, crafting_y - 10), &HFFFFFFFF, B
+      ' _PrintString (24, 30), "Parts:" + Str$(parts)
+    End If
 
     For a = 1 To UBound(Flotexts)
       If Flotexts(a).alive Then _PrintString (Flotexts(a).x, Flotexts(a).y), Flotexts(a).text
     Next
+
+    If is_started Then
+      PrintCentre ltrim$(Str$(GetPlayTime)) + "s", 40
+    End If
+
+    If Not is_started Then
+      PrintCentre "Best:" + Str$(best_time) + "s", 40
+      PrintCentre "-- Spam keys to start --", WINDOW_HEIGHT / 2
+    End If
   End If
 
   If is_win Then
@@ -250,6 +275,8 @@ Sub ResetGame
   scraps = 0
   is_game = True
   is_win = False
+  is_started = False
+  start_press_time = 0
 End Sub
 
 
@@ -283,5 +310,28 @@ Sub AddParticle (img_handle As Integer, x As Single, y As Single, vx As Single, 
       Exit Sub
     End If
   Next
+End Sub
+
+
+Function GetPlayTime#
+  GetPlayTime = _IIf(is_started, Fix((Timer - start_press_time) * 100) / 100, 0)
+End Function
+
+
+Sub LoadBestTime
+  If Not _FileExists("score.txt") Then Exit Sub
+  Open "score.txt" For Input As #1
+  Input #1, best_time
+  Close #1
+End Sub
+
+
+Sub SaveBestTime
+  If best_time < GetPlayTime Then Exit Sub
+  best_time = GetPlayTime
+
+  Open "score.txt" For Output As #1
+  Print #1, LTrim$(Str$(best_time))
+  Close #1
 End Sub
 
