@@ -14,6 +14,7 @@ Type Flotext
   y As Single
   vy As Single
   ttl As Double ' in seconds
+  colour As Integer
 End Type
 
 Type Particle
@@ -148,7 +149,11 @@ Do
         parts = parts + 1
         last_press_time = Timer
         shake_time = 0.4
+
+        Dim idx: idx = FindUnusedFlotext
         AddFlotext "+1", Fix(crafting_x + Rnd * 64), crafting_y, -1
+        If idx > 0 Then FlotextColour Flotexts(idx), hsv2rgb(Rnd, 1, 1)
+
         AddParticle img_particles(1 + Fix(Rnd * 3)), crafting_x + 16, crafting_y, (Rnd - 0.5) * 6, -6, 0.3
 
         If Not is_started Then
@@ -266,8 +271,13 @@ Do
     End If
 
     For a = 1 To UBound(Flotexts)
-      If Flotexts(a).alive Then _PrintString (Flotexts(a).x, Flotexts(a).y), Flotexts(a).text
+      If Flotexts(a).alive Then
+        Color Flotexts(a).colour
+        _PrintString (Flotexts(a).x, Flotexts(a).y), Flotexts(a).text
+      End If
     Next
+    Color &HFFFFFFFF
+
 
     If is_started Then
       PrintCentre LTrim$(Str$(GetPlayTime)) + "s", 40
@@ -292,6 +302,7 @@ Do
 Loop Until _KeyDown(K_ESC)
 
 _SndClose bgm_doodle
+_SndClose bgm_construction
 
 System
 
@@ -315,18 +326,30 @@ End Sub
 
 
 Sub AddFlotext (text As String, x As Single, y As Single, vy As Single)
+  Dim a: a = FindUnusedFlotext
+  If a < 0 Then Exit Sub
+  Flotexts(a).alive = True
+  Flotexts(a).text = text
+  Flotexts(a).x = x
+  Flotexts(a).y = y
+  Flotexts(a).vy = vy
+  Flotexts(a).ttl = 0.4
+  Flotexts(a).colour = &HFFFFFFFF
+End Sub
+
+Function FindUnusedFlotext%
   Dim a
+  FindUnusedFlotext = -1
   For a = 1 To UBound(Flotexts)
     If Not Flotexts(a).alive Then
-      Flotexts(a).alive = True
-      Flotexts(a).text = text
-      Flotexts(a).x = x
-      Flotexts(a).y = y
-      Flotexts(a).vy = vy
-      Flotexts(a).ttl = 0.4
-      Exit Sub
+      FindUnusedFlotext = a
+      Exit Function
     End If
   Next
+End Function
+
+Sub FlotextColour (ref As Flotext, colour As Integer)
+  ref.colour = colour
 End Sub
 
 Sub AddParticle (img_handle As Integer, x As Single, y As Single, vx As Single, vy As Single, gy As Single)
@@ -369,3 +392,37 @@ Sub SaveBestTime
   Close #1
 End Sub
 
+
+' https://stackoverflow.com/questions/17242144
+' { 0 <= h, s, v <= 1 }
+Function hsv2rgb& (h As Double, s As Double, v As Double)
+  Dim As Double r, g, b, i, f, p, q, t
+
+  i = Fix(h * 6)
+  f = h * 6 - i
+  p = v * (1 - s)
+  q = v * (1 - f * s)
+  t = v * (1 - (1 - f) * s)
+
+  Select Case i Mod 6
+    Case 0
+      r = v: g = t: b = p
+    Case 1
+      r = q: g = v: b = p
+    Case 2
+      r = p: g = v: b = t
+    Case 3
+      r = p: g = q: b = v
+    Case 4
+      r = t: g = p: b = v
+    Case 5
+      r = v: g = p: b = q
+  End Select
+
+  ' hsv2rgb = &HFF000000 + Fix(r * 65536) + Fix(g * 256) + Fix(b)
+  hsv2rgb = _RGB32(r * 255, g * 255, b * 255, 255)
+End Function
+
+
+Sub StartWinSequence
+End Sub
